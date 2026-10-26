@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/helper_gate.py\" hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
