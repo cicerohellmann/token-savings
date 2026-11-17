@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="850" viewBox="0 0 1200 850" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>Token savings at a glance</title>
+  <desc>About 74% of the bill is reading and writing context; the visible text is about 1%. Three levers: smaller context, fewer steps, cheaper model. Avoidable spend fell from 23.3% to 11.3% on the author's data (5–9 Oct vs 9–16 Nov 2026). Per rule, before and after: lean helper types 9.3% to 1.5%; waking inside the cache's life 6.9% to 4.1%, no tested cure yet; one task per helper 2.5% to 0.0%; model by task 4.3% to 1.6%; small, rare watchers grew from 1.1% to 4.1%, no tested cure yet; reading output in pieces and compacting at a pause 0.2% or less each, already in place.</desc>
+  <rect x="1" y="1" width="1198" height="848" rx="16" fill="#ffffff" stroke="#d0d7de" stroke-width="2"/>
+
+  <!-- title -->
+  <text x="48" y="72" font-size="34" font-weight="700" fill="#1f2328">Where Claude Code tokens go, and what cuts them</text>
+  <text x="48" y="106" font-size="18" fill="#59636e">One person's multi-agent setup, 5–9 Oct vs 9–16 Nov 2026. Shares of spend at API list prices.</text>
+
+  <!-- tiles -->
+  <g>
+    <rect x="48" y="136" width="352" height="148" rx="12" fill="#f6f8fa"/>
+    <text x="72" y="204" font-size="56" font-weight="700" fill="#1f2328">74%</text>
+    <text x="72" y="240" font-size="18" fill="#59636e">of the bill: reading and writing</text>
+    <text x="72" y="264" font-size="18" fill="#59636e">context. Visible text: about 1%</text>
+
+    <rect x="424" y="136" width="352" height="148" rx="12" fill="#f6f8fa"/>
+    <text x="448" y="204" font-size="56" font-weight="700" fill="#1f2328">3 levers</text>
+    <text x="448" y="240" font-size="18" fill="#59636e">smaller context, fewer steps,</text>
+    <text x="448" y="264" font-size="18" fill="#59636e">cheaper model</text>
+
+    <rect x="800" y="136" width="352" height="148" rx="12" fill="#f6f8fa"/>
+    <text x="824" y="204" font-size="44" font-weight="700" fill="#1f2328">23.3% → 11.3%</text>
+    <text x="824" y="240" font-size="18" fill="#59636e">avoidable spend, before → after</text>
+    <text x="824" y="264" font-size="18" fill="#59636e">adopting the rules</text>
+  </g>
+
+  <!-- chart header + legend -->
+  <text x="48" y="340" font-size="22" font-weight="700" fill="#1f2328">Avoidable share of spend, per rule</text>
+  <rect x="884" y="326" width="16" height="16" rx="4" fill="#b6bec8"/>
+  <text x="908" y="340" font-size="16" fill="#59636e">before</text>
+  <rect x="984" y="326" width="16" height="16" rx="4" fill="#2f6fdb"/>
+  <text x="1008" y="340" font-size="16" fill="#59636e">after the rule</text>
+  <line x1="420" y1="362" x2="420" y2="718" stroke="#d0d7de" stroke-width="1"/>
+
+  <!-- rows: bar origin x=420, 50 px per percent. Grader re-count 5-9 Oct vs 9-16 Nov 2026 -->
+  <g font-size="18" fill="#1f2328">
+    <!-- 1 lean helper types (startup) -->
+    <text x="48" y="398">Lean helper types</text>
+    <rect x="420" y="376" width="465" height="14" rx="4" fill="#b6bec8"/>
+    <text x="895" y="388" font-size="15" fill="#59636e">9.3%</text>
+    <rect x="420" y="394" width="75" height="14" rx="4" fill="#2f6fdb"/>
+    <text x="505" y="406" font-size="15" fill="#1f2328">1.5%</text>
+
+    <!-- 2 cache life (rewrites) -->
+    <text x="48" y="456">Wake inside the cache's life</text>
+    <rect x="420" y="434" width="345" height="14" rx="4" fill="#b6bec8"/>
+    <text x="775" y="446" font-size="15" fill="#59636e">6.9%</text>
+    <rect x="420" y="452" width="205" height="14" rx="4" fill="#2f6fdb"/>
+    <text x="635" y="464" font-size="15" fill="#1f2328">4.1% <tspan font-style="italic" fill="#59636e">no tested cure yet</tspan></text>
+
+    <!-- 3 one task per helper (re-task) -->
+    <text x="48" y="514">One task per helper</text>
+    <rect x="420" y="492" width="125" height="14" rx="4" fill="#b6bec8"/>
+    <text x="555" y="504" font-size="15" fill="#59636e">2.5%</text>
+    <rect x="420" y="510" width="3" height="14" rx="1.5" fill="#2f6fdb"/>
+    <text x="433" y="522" font-size="15" fill="#1f2328">0.0%</text>
+
+    <!-- 4 model by task -->
+    <text x="48" y="572">Model by task</text>
+    <rect x="420" y="550" width="215" height="14" rx="4" fill="#b6bec8"/>
+    <text x="645" y="562" font-size="15" fill="#59636e">4.3%</text>
+    <rect x="420" y="568" width="80" height="14" rx="4" fill="#2f6fdb"/>
+    <text x="510" y="580" font-size="15" fill="#1f2328">1.6%</text>
+
+    <!-- 5 watchers (hot wakes): grew -->
+    <text x="48" y="630">Small, rare watchers</text>
+    <rect x="420" y="608" width="55" height="14" rx="4" fill="#b6bec8"/>
+    <text x="485" y="620" font-size="15" fill="#59636e">1.1%</text>
+    <rect x="420" y="626" width="205" height="14" rx="4" fill="#2f6fdb"/>
+    <text x="635" y="638" font-size="15" fill="#1f2328">4.1% <tspan font-style="italic" fill="#59636e">grew; no tested cure yet</tspan></text>
+
+    <!-- 6 already in place (big outputs, bloat) -->
+    <text x="48" y="680">Read output in pieces,</text>
+    <text x="48" y="702">compact at a pause</text>
+    <rect x="420" y="676" width="6" height="14" rx="3" fill="#b6bec8"/>
+    <text x="436" y="688" font-size="15" fill="#59636e">0.2% or less each, rules already in place</text>
+  </g>
+
+  <!-- footer -->
+  <line x1="48" y1="752" x2="1152" y2="752" stroke="#d0d7de" stroke-width="1"/>
+  <text x="48" y="790" font-size="19" fill="#1f2328"><tspan font-weight="700">Try it:</tspan> clone the repo, run <tspan font-family="Menlo, Consolas, monospace" fill="#2f6fdb">claude</tspan> in it, and say “Evaluate my token spend.”</text>
+  <text x="48" y="820" font-size="16" fill="#59636e">grade.py reads only your local transcripts and sends nothing anywhere.</text>
+</svg>

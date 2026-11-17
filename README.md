@@ -2,6 +2,8 @@
 
 Find the Claude Code tokens that bought nothing, and stop spending them.
 
+![Where Claude Code tokens go, and what cuts them](docs/overview.svg)
+
 This repo does three things:
 
 1. **Measures.** `grade.py` reads your local Claude Code transcripts and works out, check by check,
