@@ -146,6 +146,5 @@ can grade.
   It also says nothing about work done per step: that wasn't measured.
 - Versions of `grade.py` before 17 Nov 2026 used old prices, under-counted output and misread when
   a chat was idle. The strategy table, the overall share and the `--split` figures come from the
-  fixed version. The 17% and the context figures come from the author's separate analysis scripts,
-  which are not in this repo.
+  fixed version, and so do the 17% and the context figures (`--compare`, command above).
 - The grade says nothing about whether the work was worth doing.
