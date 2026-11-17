@@ -141,16 +141,25 @@ can grade.
 - Other changes landed in the same weeks, so the effects above can't all be credited to one rule.
 - Shares are of spend priced at API list rates. On a subscription they show where your limit goes,
   not a bill.
-- The 17% starts on 5 Oct 2026, but the author had been cutting tokens since the summer. Claude Code
-  deletes old chat records, and only a few from before October survive. Counting days with at least
-  100 steps (the summer days are small; the Results above use 1,000), 4 summer days qualify: 9 Jul,
-  23 Jul, 5 Sep and 4 Oct. On those a step cost $0.103 and re-sent 246k tokens of context, against
-  $0.059 and 107k in early October (5–16 Oct) and $0.045 and 82k after 17 Oct. That hints the gain
-  since summer is much bigger than 17%. But the survivors are a few chats that each ran for weeks
-  (one from 10 Jun to 23 Jul, one from 5 Sep to 30 Oct), and long chats carry the most context, so
-  the README claims only 17%. Check it:
-  `python3 grade.py --compare 2026-10-05 --since 2026-06-01 --until 2026-10-17 --exclude-model fable --min-steps 100`
-  and `python3 grade.py --compare 2026-10-17 --since 2026-10-05 --until 2026-11-17 --exclude-model fable --min-steps 100`.
+- The 17% starts on 5 Oct 2026, but the author had been cutting tokens long before. Claude Code
+  deletes old chat records by itself, so the token counts of the hundreds of chats a month before
+  October are gone (the author's prompt log shows 116 chats in June, 318 in July, 584 in August);
+  only the prompts survive. Two older records still have token counts, and both point to a gain much
+  bigger than 17%:
+  - Claude Code's stats file on the author's Mac covers 20 Mar to 7 Apr 2026. Then, Claude Opus read
+    742 tokens of context for every token it wrote; from 17 Oct to 16 Nov it read 200. But the model
+    changed in between (Opus 4.6 then, 5.5 now), and a model that writes more per step lowers that
+    ratio by itself. grade.py does not read the stats file; this figure is from the author's notes.
+  - A few summer chats survive. Counting days with at least 100 steps (the summer days are small;
+    the Results above use 1,000), 4 summer days qualify: 9 Jul, 23 Jul, 5 Sep and 4 Oct. On those a
+    step cost $0.103 and re-sent 246k tokens of context, against $0.059 and 107k in early October
+    (5–16 Oct) and $0.045 and 82k after 17 Oct. But those are chats that each ran for weeks (one
+    from 10 Jun to 23 Jul, one from 5 Sep to 30 Oct), and long chats carry the most context. Check it:
+    `python3 grade.py --compare 2026-10-05 --since 2026-06-01 --until 2026-10-17 --exclude-model fable --min-steps 100`
+    and `python3 grade.py --compare 2026-10-17 --since 2026-10-05 --until 2026-11-17 --exclude-model fable --min-steps 100`.
+
+  The README claims only 17% because that is the one comparison with enough days on both sides
+  to test.
 - The 17% leaves out Claude Fable 5.2, which the author started using in November at twice
   Opus's price; with it included, cost per step for 9–16 Nov was back to about where it started.
   It also says nothing about work done per step: that wasn't measured.
