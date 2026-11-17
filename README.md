@@ -69,6 +69,9 @@ list prices for every model.
 **Each step got about 17% cheaper.** The average day cost $0.053 per step before the rules
 (5–16 Oct, 8 full days) and $0.044 after (17 Oct – 16 Nov, 29 full days), leaving out Fable
 (see limits). A permutation test on the daily figures puts the chance of this being luck below 0.1%.
+With Fable included the drop is about 12% ($0.053 to $0.047 per step, p about 0.03).
+Run it on your own data: `python3 grade.py --compare 2026-10-17 --since 2026-10-05 --until 2026-11-17 --exclude-model fable --min-steps 1000`
+(`--until` is exclusive; $ is list price, p is the chance of a gap this big by luck).
 
 **Because context got smaller.** Each step re-sent about 107k tokens of context before and about
 81k after. Output per step did not fall in the same way (about 760 tokens per step early October,

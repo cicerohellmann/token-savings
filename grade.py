@@ -11,8 +11,10 @@ usage:
   grade.py --repo ~/code/app:main  also count landed commits per $ (ungraded, repeatable)
   grade.py --json                  machine-readable
   grade.py --split                 where the $ went by token type, and the share of visible prose
+  grade.py --compare 2026-10-17 --since 2026-10-05 --until 2026-11-17   before/after a date: $ per step, context, output, permutation test
+           [--exclude-model SUBSTR] (repeatable)  [--min-steps N] (default 100, days with fewer steps are left out)
 """
-import argparse, collections, datetime as dt, glob, json, os, re, subprocess, sys
+import argparse, collections, datetime as dt, glob, json, os, random, re, subprocess, sys
 
 # $ per million tokens at API list price: input, output, cache read, cache write 5m, cache write 1h.
 # P: current models (Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2). P_OLD: models before 5.5 (Opus 4.x and 5,
@@ -225,6 +227,50 @@ def split(files, lo, hi):
     print('  Context (cache reads + writes) is what smaller chats and fresh helpers cut; prose is all terse prompting can cut.')
 
 
+def compare(files, lo, hi, date, exclude, min_steps):
+    """Before/after a local date (every model at today's list price, so old and new days are comparable): daily $ per step, context per step, output per step, and a permutation test on $ per step."""
+    best = {}
+    for f in files:
+        for l in open(f, errors='ignore'):
+            if '"usage"' not in l or '"assistant"' not in l: continue
+            try: d = json.loads(l)
+            except Exception: continue
+            m = d.get('message') or {}; u = m.get('usage'); ts = d.get('timestamp') or ''
+            if not u or not (lo <= ts < hi) or fam(m.get('model')) is None: continue
+            if any(x.lower() in (m.get('model') or '').lower() for x in exclude): continue
+            k = m.get('id')
+            if k not in best or (u.get('output_tokens') or 0) > (best[k][2].get('output_tokens') or 0): best[k] = (ts, m.get('model'), u)
+    days = collections.defaultdict(lambda: [0, 0.0, 0, 0])  # steps, $, context, output
+    for ts, model, u in best.values():
+        g = lambda x: u.get(x) or 0
+        p = P[fam(model)]; w1 = (u.get('cache_creation') or {}).get('ephemeral_1h_input_tokens') or 0
+        day = dt.datetime.fromisoformat(ts.replace('Z', '+00:00')).astimezone().strftime('%Y-%m-%d')
+        x = days[day]; x[0] += 1
+        x[1] += (g('input_tokens') * p[0] + g('output_tokens') * p[1] + g('cache_read_input_tokens') * p[2]
+                 + (g('cache_creation_input_tokens') - w1) * p[3] + w1 * p[4]) / 1e6
+        x[2] += g('input_tokens') + g('cache_read_input_tokens') + g('cache_creation_input_tokens'); x[3] += g('output_tokens')
+    kept = {d: v for d, v in days.items() if v[0] >= min_steps}
+    side = lambda keep: [(v[1] / v[0], v[2] / v[0], v[3] / v[0]) for d, v in sorted(kept.items()) if keep(d)]
+    A, B = side(lambda d: d < date), side(lambda d: d >= date)
+    if not A or not B: print(f'Need counted days on both sides of {date} (days with at least {min_steps} steps: {len(kept)}).'); return
+    mean = lambda xs: sum(xs) / len(xs)
+    a, b = [x[0] for x in A], [x[0] for x in B]
+    gap = abs(mean(a) - mean(b)); rng = random.Random(0); pool = a + b; hits = 0; n = 20000
+    for _ in range(n):
+        rng.shuffle(pool)
+        if abs(mean(pool[:len(a)]) - mean(pool[len(a):])) >= gap - 1e-15: hits += 1
+    pct = lambda i: 100 * (mean([x[i] for x in B]) / mean([x[i] for x in A]) - 1)
+    print(f'Before/after {date}, inside the --since/--until window (--until is exclusive), days with at least {min_steps} steps'
+          + (f', leaving out models matching: {", ".join(exclude)}' if exclude else ''))
+    print(f"{'':<16}{'before':>10}{'after':>10}{'change':>9}")
+    print(f"{'days':<16}{len(A):>10}{len(B):>10}")
+    print(f"{'$ per step':<16}{mean(a):>10.4f}{mean(b):>10.4f}{pct(0):>8.1f}%")
+    print(f"{'context / step':<16}{mean([x[1] for x in A]):>10,.0f}{mean([x[1] for x in B]):>10,.0f}{pct(1):>8.1f}%")
+    print(f"{'output / step':<16}{mean([x[2] for x in A]):>10,.0f}{mean([x[2] for x in B]):>10,.0f}{pct(2):>8.1f}%")
+    print(f'Permutation test on daily $ per step ({n:,} shuffles): p = {(hits + 1) / (n + 1):.4f}')
+    print('$ is today\'s API list price for every model (older models too), not your bill. p is the chance of a gap this big by luck if the date made no difference; it does not show the rules caused the change.')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--days', type=float, default=7)
@@ -233,6 +279,9 @@ def main():
     ap.add_argument('--repo', action='append', default=[], help='PATH[:BRANCH], repeatable; branch defaults to main')
     ap.add_argument('--json', action='store_true')
     ap.add_argument('--split', action='store_true', help='show where the $ went by token type, and the share of visible prose')
+    ap.add_argument('--compare', metavar='YYYY-MM-DD', help='before/after a local date: $ per step, context, output, permutation test')
+    ap.add_argument('--exclude-model', action='append', default=[], metavar='SUBSTR', help='with --compare: drop models whose id contains SUBSTR (repeatable)')
+    ap.add_argument('--min-steps', type=int, default=100, help='with --compare: days with fewer steps are left out (default 100)')
     o = ap.parse_args()
     now = dt.datetime.now(dt.timezone.utc)
     local = lambda x: dt.datetime.fromisoformat(x).astimezone(dt.timezone.utc)  # --since/--until are local time
@@ -241,6 +290,7 @@ def main():
     iso = lambda x: x.strftime('%Y-%m-%dT%H:%M:%S')
     lo, hi = iso(lo_d), iso(hi_d)
     files = glob.glob(o.root + '/*/*.jsonl') + glob.glob(o.root + '/*/*/subagents/*.jsonl')
+    if o.compare: return compare([f for f in files if os.path.getmtime(f) >= lo_d.timestamp()], lo, hi, o.compare, o.exclude_model, o.min_steps)
     if o.split: return split([f for f in files if os.path.getmtime(f) >= lo_d.timestamp()], lo, hi)
     chats = [scan(f, lo, hi) for f in files if os.path.getmtime(f) >= lo_d.timestamp()]
     chats = [F for F in chats if F['reqs']]
