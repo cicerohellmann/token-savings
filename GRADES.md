@@ -33,11 +33,20 @@ the API equivalent, not your bill. On a subscription it still shows where your l
 | Oct 11 – Oct 25 16:20 (baseline window) | **26.5% red** | 7.4 | 5.2 | 0.9 | 2.4 | 10.6 | 0.1 | 0.1 |
 | Oct 25 16:20 – 23:28 (after the re-task gate, 7 h only) | **22.1% red** | 3.7 | 0.4 | 0.6 | 6.7 | 10.7 | 0.1 | 0.1 |
 
+**Re-count with the fixed grader (17 Nov 2026).** The rows above came from versions of `grade.py` that used
+the old prices (Opus $5/$25, cache reads $0.50), under-counted output on older Claude Code versions and
+misread when a chat was idle.
+The fixed grader, at today's prices, on 5–9 Oct and on 9–16 Nov:
+
+| window | avoidable | re-task | startup | model | hot wakes | rewrites | big outputs | bloat |
+|---|---|---|---|---|---|---|---|---|
+| Oct 5 – Oct 9 (before the rules) | **23.3% red** | 2.5 | 9.3 | 4.3 | 1.1 | 6.9 | 0.1 | 0.1 |
+| Nov 9 – Nov 16 (after) | **11.3% yellow** | 0.0 | 1.5 | 1.6 | 4.1 | 4.1 | 0.2 | 0.0 |
+
 Check of the script: for Oct 11–25, its total spend and helper count (3,101) match the author's separate analysis script (3,116 helpers) within 3%; the gap is mostly 1 h cache writes, which grade.py prices higher.
 
-**Every window of the author's data is red, even after the gate.** Re-tasking and startup fell, but cache
-rewrites stay near 10% in every window and no cure for them has been measured. So today the lab can
-show what keeps you red, but not yet a tested path to green.
+**The October windows were all red; mid November is yellow.** Re-tasking, startup and model fit fell.
+Cache rewrites and hot wakes now hold most of what is left, and no cure for either has been measured.
 
 ---
 
@@ -69,7 +78,7 @@ show what keeps you red, but not yet a tested path to green.
 
 ## model: model fit
 
-- **Mechanism.** Opus costs 5× haiku per token. A lookup (find, list, count, read a log) gets the
+- **Mechanism.** Opus 5.5 costs 40× Haiku 5.5 per input token. A lookup (find, list, count, read a log) gets the
   same answer from haiku.
 - **What is counted.** Opus helpers whose description looks like a lookup and not like judgment
   (keyword match on the description). 80% of their cost is counted.
@@ -96,7 +105,7 @@ show what keeps you red, but not yet a tested path to green.
 ## rewrite: cache rewrites
 
 - **Mechanism.** The prompt cache keeps a conversation for 5 minutes (or 1 hour). After that, the
-  next step writes the whole context to the cache again at 12.5× the read price (5 min) or 20× (1 h).
+  next step writes the whole context to the cache again at 25× the read price (5 min) or 40× (1 h) on Opus 5.5, 12.5× or 20× on Sonnet and Haiku 5.5.
 - **What is counted.** A step with a cache write over 30k that is more than half its context, after
   a gap longer than the cache's life, in a helper or after a machine wake. Counted: write price minus
   read price. The whole write counts, not just the part above a small watcher's 30k (as hot wakes

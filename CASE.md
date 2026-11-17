@@ -13,7 +13,7 @@ The session limit hit after about an hour. Where the tokens went:
 | cache reads (re-sending conversations) | 96% |
 
 By loop: repo A about 42%, the first repo B loop about 39%, the second about 12%, the watchers
-about 3%. `grade.py` grades that day **36.5% avoidable, red** ([GRADES.md](GRADES.md)).
+about 3%. `grade.py` grades that day **36.5% avoidable, red** ([GRADES.md](GRADES.md)). (That count used the grader's old prices; see the re-count in GRADES.md.)
 
 ## What was not the problem
 

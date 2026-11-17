@@ -10,11 +10,16 @@ usage:
   grade.py --since 2026-10-09 --until 2026-10-10   (local time)
   grade.py --repo ~/code/app:main  also count landed commits per $ (ungraded, repeatable)
   grade.py --json                  machine-readable
+  grade.py --split                 where the $ went by token type, and the share of visible prose
 """
 import argparse, collections, datetime as dt, glob, json, os, re, subprocess, sys
 
-# $ per million tokens at API list price: input, output, cache read, cache write 5m, cache write 1h
-P = {'opus': (5, 25, .5, 6.25, 10), 'sonnet': (3, 15, .3, 3.75, 6), 'haiku': (1, 5, .1, 1.25, 2)}
+# $ per million tokens at API list price: input, output, cache read, cache write 5m, cache write 1h.
+# P: current models (Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.2). P_OLD: models before 5.5 (Opus 4.x and 5,
+# Sonnet/Haiku 4.x, Fable 5 and 5.1; their cache-write prices are taken at 1.25x and 2x input).
+P = {'opus': (4, 20, .2, 5, 8), 'sonnet': (2, 10, .2, 2.5, 4), 'haiku': (.1, .5, .01, .125, .2), 'fable': (8, 40, .2, 10, 16)}
+CURRENT = {'fable': (5, 2)}  # first current version per family; the others start at 5.5
+P_OLD = {'opus': (5, 25, .5, 6.25, 10), 'sonnet': (3, 15, .3, 3.75, 6), 'haiku': (1, 5, .1, 1.25, 2), 'fable': (10, 50, .25, 12.5, 20)}
 SHARE = (2, 5)       # a check: green below 2% of spend avoidable, red above 5%
 OVERALL = (10, 20)   # all checks together: green below 10%, red above 20%
 RETASK_CTX = 100e3   # re-tasking a helper above this is against the rules
@@ -41,6 +46,13 @@ CHECKS = [
 def fam(m):
     m = m or ''
     return next((k for k in P if k in m), None if 'synthetic' in m else 'opus')
+
+
+def prices(m):
+    # Models older than the current ones (claude-opus-4-8, claude-fable-5-1, claude-3-5-haiku ...) use P_OLD.
+    m = (m or '').lower(); f = fam(m)
+    x = re.search(r'claude-(\d)(?:-(\d))?-(?:opus|sonnet|haiku)', m) or re.search(r'(?:opus|sonnet|haiku|fable)-(\d)(?:-(\d))?(?!\d)', m)
+    return P_OLD if x and (int(x[1]), int(x[2] or 0)) < CURRENT.get(f, (5, 5)) else P
 
 
 def text_of(c):
@@ -72,8 +84,19 @@ def scan(path, lo, hi):
     F = dict(path=path, helper=helper, meta=meta, title=meta.get('description'), cwd=None, reqs=[])
     seen = set(); base = None; seg = 0; seg_carry = 0; called = False; idle = True
     turn = 'human'; prev_t = None; live = []  # live: [excess tokens of big outputs not yet compacted]
-    try: fh = open(path, errors='ignore')
+    try: fh = open(path, errors='ignore').readlines()
     except Exception: return F
+    # One reply is written as several lines with the same message id, one content block per line.
+    # Older Claude Code versions put a partial output count on the first line, so take the highest count
+    # seen for each message id, and look for tool calls on every line, not just the first.
+    maxo = {}; tools = set()
+    for l in fh:
+        if '"usage"' not in l or '"assistant"' not in l: continue
+        try: m0 = json.loads(l).get('message') or {}
+        except Exception: continue
+        o0 = (m0.get('usage') or {}).get('output_tokens') or 0
+        maxo[m0.get('id')] = max(maxo.get(m0.get('id'), 0), o0)
+        if any(isinstance(b, dict) and b.get('type') == 'tool_use' for b in (m0.get('content') or [])): tools.add(m0.get('id'))
     for l in fh:
         head = l[:300]
         if '"queued_command"' in head:
@@ -116,11 +139,12 @@ def scan(path, lo, hi):
         f = fam(m.get('model'))
         if f is None: continue
         waited = not idle
-        idle = not any(isinstance(b, dict) and b.get('type') == 'tool_use' for b in (m.get('content') or []))
+        idle = m.get('id') not in tools
         ts = d.get('timestamp') or ''
         i, o, cr, cw = (u.get(k, 0) or 0 for k in ('input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens'))
+        o = max(o, maxo.get(m.get('id'), 0))
         w1h = ((u.get('cache_creation') or {}).get('ephemeral_1h_input_tokens') or 0)
-        ctx = i + cr + cw; p = P[f]
+        ctx = i + cr + cw; p = prices(m.get('model'))[f]
         t = stamp(ts) if ts else 0
         gap = t - prev_t if prev_t else 0; prev_t = t
         if base is None: base = ctx
@@ -170,6 +194,37 @@ def chat_name(F, root):
 def color(x, cut): return 'GREEN' if x < cut[0] else 'RED' if x > cut[1] else 'YELLOW'
 
 
+def split(files, lo, hi):
+    """Where the $ went by token type, and how much of it was visible prose (what terse prompting can cut)."""
+    usage, prose, seen = {}, collections.Counter(), set()
+    for f in files:
+        for l in open(f, errors='ignore'):
+            if '"usage"' not in l or '"assistant"' not in l: continue
+            try: d = json.loads(l)
+            except Exception: continue
+            m = d.get('message') or {}; u = m.get('usage') or {}; ts = d.get('timestamp') or ''
+            if not (lo <= ts < hi) or fam(m.get('model')) is None: continue
+            k = m.get('id')
+            if k not in usage or (u.get('output_tokens') or 0) > (usage[k][1].get('output_tokens') or 0): usage[k] = (m.get('model'), u)
+            if d.get('uuid') in seen: continue
+            seen.add(d.get('uuid'))
+            prose[k] += sum(len(b.get('text') or '') for b in (m.get('content') or []) if isinstance(b, dict) and b.get('type') == 'text')
+    c = collections.Counter()
+    for k, (model, u) in usage.items():
+        p = prices(model)[fam(model)]; g = lambda x: u.get(x) or 0
+        w1 = (u.get('cache_creation') or {}).get('ephemeral_1h_input_tokens') or 0
+        c['input'] += g('input_tokens') * p[0] / 1e6; c['output'] += g('output_tokens') * p[1] / 1e6
+        c['cache read'] += g('cache_read_input_tokens') * p[2] / 1e6
+        c['cache write'] += ((g('cache_creation_input_tokens') - w1) * p[3] + w1 * p[4]) / 1e6
+        c['prose'] += prose[k] / 4 * p[1] / 1e6  # about 4 characters per token
+    total = c['input'] + c['output'] + c['cache read'] + c['cache write']
+    if not total: print('No requests in this window.'); return
+    print(f'Where the $ went, {lo[:10]} to {hi[:10]} ({len(usage):,} replies, ${total:,.0f} at list price)')
+    for k in ('cache read', 'cache write', 'output', 'input'): print(f'  {k:<12} {100 * c[k] / total:5.1f}%')
+    print(f'  visible prose, part of output: {100 * c["prose"] / total:.1f}% (estimated at 4 characters per token)')
+    print('  Context (cache reads + writes) is what smaller chats and fresh helpers cut; prose is all terse prompting can cut.')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--days', type=float, default=7)
@@ -177,6 +232,7 @@ def main():
     ap.add_argument('--root', default=os.path.join(os.environ.get('CLAUDE_CONFIG_DIR') or os.path.expanduser('~/.claude'), 'projects'))
     ap.add_argument('--repo', action='append', default=[], help='PATH[:BRANCH], repeatable; branch defaults to main')
     ap.add_argument('--json', action='store_true')
+    ap.add_argument('--split', action='store_true', help='show where the $ went by token type, and the share of visible prose')
     o = ap.parse_args()
     now = dt.datetime.now(dt.timezone.utc)
     local = lambda x: dt.datetime.fromisoformat(x).astimezone(dt.timezone.utc)  # --since/--until are local time
@@ -185,6 +241,7 @@ def main():
     iso = lambda x: x.strftime('%Y-%m-%dT%H:%M:%S')
     lo, hi = iso(lo_d), iso(hi_d)
     files = glob.glob(o.root + '/*/*.jsonl') + glob.glob(o.root + '/*/*/subagents/*.jsonl')
+    if o.split: return split([f for f in files if os.path.getmtime(f) >= lo_d.timestamp()], lo, hi)
     chats = [scan(f, lo, hi) for f in files if os.path.getmtime(f) >= lo_d.timestamp()]
     chats = [F for F in chats if F['reqs']]
     total = sum(r[1] for F in chats for r in F['reqs'])
