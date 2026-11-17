@@ -141,6 +141,16 @@ can grade.
 - Other changes landed in the same weeks, so the effects above can't all be credited to one rule.
 - Shares are of spend priced at API list rates. On a subscription they show where your limit goes,
   not a bill.
+- The 17% starts on 5 Oct 2026, but the author had been cutting tokens since the summer. Claude Code
+  deletes old chat records, and only a few from before October survive. Counting days with at least
+  100 steps (the summer days are small; the Results above use 1,000), 4 summer days qualify: 9 Jul,
+  23 Jul, 5 Sep and 4 Oct. On those a step cost $0.103 and re-sent 246k tokens of context, against
+  $0.059 and 107k in early October (5–16 Oct) and $0.045 and 82k after 17 Oct. That hints the gain
+  since summer is much bigger than 17%. But the survivors are a few chats that each ran for weeks
+  (one from 10 Jun to 23 Jul, one from 5 Sep to 30 Oct), and long chats carry the most context, so
+  the README claims only 17%. Check it:
+  `python3 grade.py --compare 2026-10-05 --since 2026-06-01 --until 2026-10-17 --exclude-model fable --min-steps 100`
+  and `python3 grade.py --compare 2026-10-17 --since 2026-10-05 --until 2026-11-17 --exclude-model fable --min-steps 100`.
 - The 17% leaves out Claude Fable 5.2, which the author started using in November at twice
   Opus's price; with it included, cost per step for 9–16 Nov was back to about where it started.
   It also says nothing about work done per step: that wasn't measured.
