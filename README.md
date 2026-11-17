@@ -63,8 +63,8 @@ checks that hold most of what's left, hot wakes and cache rewrites, have no meas
 
 ## Results
 
-On the author's machine, 5 Oct – 16 Nov 2026: about 500,000 model calls, priced at today's API list
-prices for every model.
+On the author's machine, every Claude Code call from 5 Oct to 16 Nov 2026, priced at today's API
+list prices for every model.
 
 **Each step got about 17% cheaper.** The average day cost $0.053 per step before the rules
 (5–16 Oct, 8 full days) and $0.044 after (17 Oct – 16 Nov, 29 full days), leaving out Fable
