@@ -73,7 +73,14 @@ With Fable included the drop is about 12% ($0.053 to $0.047 per step, p about 0.
 Run it on your own data: `python3 grade.py --compare 2026-10-17 --since 2026-10-05 --until 2026-11-17 --exclude-model fable --min-steps 1000`
 (`--until` is exclusive; $ is list price, p is the chance of a gap this big by luck).
 
-**Because context got smaller.** Each step re-sent about 107k tokens of context before and about
+**Since March, about two thirds cheaper per token Opus writes (63–73%), but with weaker proof.**
+Priced at today's Opus rates, each million tokens Claude Opus wrote cost about $270 in 20 Mar –
+7 Apr 2026 and $72–99 in 17 Oct – 16 Nov. The model changed in between (Opus 4.6 then, 5.5 now),
+and a model that writes more per step looks cheaper per token written by itself, so part of this
+may be the newer model. The March side comes from Claude Code's stats file, not from transcripts,
+so `grade.py` can't re-run it; details under limits.
+
+**The 17% came from smaller context.** Each step re-sent about 107k tokens of context before and about
 81k after. Output per step did not fall in the same way (about 760 tokens per step early October,
 560 late October, 760 again mid November).
 
@@ -160,10 +167,10 @@ can grade.
     `python3 grade.py --compare 2026-10-05 --since 2026-06-01 --until 2026-10-17 --exclude-model fable --min-steps 100`
     and `python3 grade.py --compare 2026-10-17 --since 2026-10-05 --until 2026-11-17 --exclude-model fable --min-steps 100`.
 
-  The README claims only 17% because that is the one comparison with enough days on both sides
-  to test. Even the 5–16 Oct side has lost most of its chats (45 of the 49 that started then were
-  deleted), and the long ones survive. The author's notes split the steps: helpers, which start with
-  fresh context, went from 105k to 76k context per step (−28%); main chats only from 117k to 112k.
+  The 17% leads because it is the one comparison with enough days on both sides to test. Even
+  the 5–16 Oct side has lost most of its chats (45 of the 49 that started then were deleted),
+  and the long ones survive. The author's notes split the steps: helpers, which start with fresh
+  context, went from 105k to 76k context per step (−28%); main chats only from 117k to 112k.
   So the gain is real but comes mostly from the helpers.
 - The 17% leaves out Claude Fable 5.2, which the author started using in November at twice
   Opus's price; with it included, cost per step for 9–16 Nov was back to about where it started.
